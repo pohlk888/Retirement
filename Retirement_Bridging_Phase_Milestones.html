@@ -14,6 +14,8 @@
       --blue: #1f5f99;
       --blue-soft: #e8f2fb;
       --green-soft: #eaf7ef;
+      --amber-soft: #fff4db;
+      --red-soft: #fff0f0;
       --shadow: 0 10px 30px rgba(23, 32, 51, 0.08);
     }
     * { box-sizing: border-box; }
@@ -24,10 +26,7 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       line-height: 1.5;
     }
-    main {
-      width: min(1180px, calc(100% - 32px));
-      margin: 32px auto 56px;
-    }
+    main { width: min(1180px, calc(100% - 32px)); margin: 32px auto 56px; }
     header, section {
       margin-bottom: 24px;
       padding: 24px;
@@ -36,73 +35,427 @@
       border-radius: 12px;
       box-shadow: var(--shadow);
     }
-    h1 {
-      margin: 0;
-      font-size: clamp(1.8rem, 3vw, 2.5rem);
-      letter-spacing: 0;
-    }
-    h2 {
-      margin: 0 0 16px;
-      font-size: 1.35rem;
-      color: var(--blue);
-      letter-spacing: 0;
-    }
-    h3 { margin: 18px 0 10px; }
+    h1 { margin: 0; font-size: clamp(1.8rem, 3vw, 2.5rem); letter-spacing: 0; }
+    h2 { margin: 0 0 16px; font-size: 1.35rem; color: var(--blue); letter-spacing: 0; }
+    h3 { margin: 0 0 12px; font-size: 1.05rem; color: #26364f; letter-spacing: 0; }
     p { margin: 0 0 16px; color: var(--muted); }
-    ul { margin: 0 0 0 20px; padding: 0; color: var(--muted); }
-    li { margin: 8px 0; }
-    code {
-      padding: 2px 5px;
-      border-radius: 5px;
-      background: #eef2f7;
-      color: #26364f;
-    }
-    .spacer { height: 14px; }
-    .table-wrap {
-      overflow-x: auto;
+    button, input, textarea { font: inherit; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+    .btn {
+      min-height: 38px;
+      padding: 8px 14px;
       border: 1px solid var(--line);
-      border-radius: 10px;
+      border-radius: 8px;
       background: #fff;
+      color: var(--ink);
+      cursor: pointer;
+      font-weight: 650;
     }
-    table {
-      width: 100%;
-      min-width: 760px;
-      border-collapse: collapse;
-    }
-    th, td {
-      padding: 12px 14px;
+    .btn.primary { border-color: var(--blue); background: var(--blue); color: #fff; }
+    .btn.danger { border-color: #c84b4b; background: var(--red-soft); color: #8d2424; }
+    .status { min-height: 22px; margin: 12px 0 0; color: var(--muted); font-size: 0.9rem; }
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 4px 0 18px;
+      padding-bottom: 10px;
       border-bottom: 1px solid var(--line);
-      vertical-align: top;
-      text-align: left;
     }
-    th {
-      background: var(--blue-soft);
-      color: #183a5c;
+    .tab-button {
+      min-height: 38px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--muted);
+      cursor: pointer;
       font-weight: 700;
-      white-space: nowrap;
     }
+    .tab-button.active { border-color: var(--blue); background: var(--blue-soft); color: var(--blue); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .editor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .editor-card { border: 1px solid var(--line); border-radius: 10px; background: #fbfdff; padding: 16px; }
+    .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .field.full { grid-column: 1 / -1; }
+    label { color: var(--muted); font-size: 0.84rem; font-weight: 700; }
+    input, textarea {
+      width: 100%;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+    }
+    textarea { min-height: 82px; resize: vertical; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+    table { width: 100%; min-width: 760px; border-collapse: collapse; }
+    th, td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; text-align: left; }
+    th { background: var(--blue-soft); color: #183a5c; font-weight: 700; white-space: nowrap; }
     tr:last-child td { border-bottom: none; }
-    td.amount, th.amount {
-      text-align: right;
-      white-space: nowrap;
-      font-variant-numeric: tabular-nums;
-    }
+    td.amount, th.amount { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
     tbody tr:nth-child(even) td { background: #fbfdff; }
     strong { color: var(--ink); }
+    ul { margin: 0 0 0 20px; padding: 0; color: var(--muted); }
+    li { margin: 8px 0; }
     @media (max-width: 860px) {
       main { width: min(100% - 20px, 1180px); margin-top: 16px; }
       header, section { padding: 18px; border-radius: 10px; }
+      .editor-grid, .field-grid { grid-template-columns: 1fr; }
     }
     @media print {
       body { background: #fff; }
       main { width: 100%; margin: 0; }
       header, section { box-shadow: none; break-inside: avoid; }
+      .editor-section { display: none; }
     }
   </style>
 </head>
 <body>
   <main>
-<header><h1>❤️ Retirement Bridging Phase Milestone</h1></header><section><h2>Milestone Table</h2><div class="table-wrap"><table><thead><tr><th>Milestone / Phase</th><th>What Happens</th><th>Action Needed</th><th>Decision / Status</th><th>Planning</th></tr></thead><tbody><tr><td>Age 55: CPF Restructuring - Bridging Phase</td><td>CPF RA Retirement Account opens</td><td>Top up to ERS max, continue annual RA top-ups of about 3.5% yearly until age 70, and review CPF nomination. Funding can come from SA, OA, or cash.</td><td>Estimated RA ERS limit at age 55 in 2032 is ~$542K. Estimated CPF RA top-up from age 56 to 70 is ~$370K. Estimated SA at Sep 2032 is ~$467K, leaving about ~$75K shortfall.</td><td>At Oct 2032, age 55, top up about ~$75K from OA or cash to meet estimated ERS max of ~$542K. Then set aside about ~$360K from OA or cash to fund RA across 14 years until age 70. Estimated total RA funding need: ~$435K.</td></tr><tr><td>Age 62-63: SRS Window Opens - Bridging Phase</td><td>SRS withdrawals can begin penalty-free.</td><td>Confirm SRS penalty-free withdrawal age. If SRS account was opened before July 2022, withdrawal age should be 62. Estimate annual withdrawals and plan a 10-year tax-efficient drawdown.</td><td>To be confirmed.</td><td>At Sep 2033, age 56, estimated RA is ~$575K from salary contributions and interest, without additional voluntary top-ups. Estimated OA is ~$336K and estimated SRS is ~$210K.</td></tr><tr><td>Age 65: CPF LIFE Can Begin - Bridging Phase</td><td>CPF LIFE payouts can start.</td><td>Compare CPF LIFE Basic, Standard, and Escalating plans. Basic is estimated around 8% lower than Standard; Escalating is estimated around 19% lower at the beginning. Defer payout to age 70 to benefit from higher payout.</td><td>Preferred approach: Standard Plan, defer payout to age 70. Need bridging income to sustain from earlier retirement years until 70.</td><td>From age 61 to 70, estimated OA + SRS is ~$550K with 2.5% interest over 10 years. Maximizer drawdown may average about ~$5.1K/month. From age 57 to 60, need about ~$250K cash to fund 4 years, generating about ~$5.2K/month.</td></tr><tr><td>Age 70: Maximum Payout - Lifetime Security Phase</td><td>Latest point to defer CPF LIFE.</td><td>Finalize CPF LIFE payout start, confirm emergency funds, and align investment drawdowns with CPF LIFE income.</td><td>Male, Standard Plan, estimated RA of ~$1.56M at age 70 may generate about ~$9K/month from Oct 2047 onward. In 2026 value, this is about ~$4.8K/month assuming 3% inflation.</td><td>Total cash needed from age 55 to 70 is about ~$700K. As of Jun 2026, available resources are about ~$365K: cash ~$250K, FD ~$55K, and AIA insurance ~$60K. Additional need is about ~$335K over 7 years, or about ~$50K/year savings. With annual income ~$200K and total expenditure including CPF/SRS reduction and top-ups of about ~$100K, final savings could be ~$100K/year. Possible extra savings: ~$80K/year x 7 years = ~$560K.</td></tr></tbody></table></div></section><section><h2>Summary</h2><div class="table-wrap"><table><thead><tr><th>Topic</th><th class="amount">Estimate</th></tr></thead><tbody><tr><td>Estimated ERS target at age 55</td><td class="amount">~$542K</td></tr><tr><td>Estimated SA at Sep 2032</td><td class="amount">~$467K</td></tr><tr><td>Initial ERS shortfall at age 55</td><td class="amount">~$75K</td></tr><tr><td>RA top-up need from age 56 to 70</td><td class="amount">~$360K-$370K</td></tr><tr><td>Total RA funding need</td><td class="amount">~$435K</td></tr><tr><td>Estimated RA at Sep 2033 without voluntary top-up</td><td class="amount">~$575K</td></tr><tr><td>Estimated OA at Sep 2033</td><td class="amount">~$336K</td></tr><tr><td>Estimated SRS at Sep 2033</td><td class="amount">~$210K</td></tr><tr><td>Estimated RA at age 70</td><td class="amount">~$1.56M</td></tr><tr><td>Estimated CPF LIFE Standard payout at age 70</td><td class="amount">~$9K/month</td></tr><tr><td>Estimated 2026 value of age-70 payout</td><td class="amount">~$4.8K/month</td></tr><tr><td>Total cash needed from age 55 to 70</td><td class="amount">~$700K</td></tr><tr><td>Current available resources as of Jun 2026</td><td class="amount">~$365K</td></tr><tr><td>Additional cash required over 7 years</td><td class="amount">~$335K</td></tr><tr><td>Required average annual savings</td><td class="amount">~$50K/year</td></tr></tbody></table></div></section><section><h2>Key Planning Notes</h2><ul><li>CPF LIFE Standard Plan is the preferred working assumption.</li><li>CPF LIFE payout is planned to be deferred until age 70.</li><li>Bridging income is needed before CPF LIFE starts.</li><li>OA, SRS, cash, and possible insurance surrender value are key bridging resources.</li><li>Do not double-count CPF SA and RA after age 55, because SA is used to form RA.</li></ul></section>
+    <header>
+      <h1 id="page-title"></h1>
+      <div class="toolbar">
+        <button class="btn primary" id="save-button" type="button">Save Edits</button>
+        <button class="btn" id="export-button" type="button">Export JSON</button>
+        <button class="btn" id="print-button" type="button">Print / PDF</button>
+        <button class="btn danger" id="reset-button" type="button">Reset</button>
+      </div>
+      <p class="status" id="status"></p>
+    </header>
+    <section class="editor-section">
+      <h2>Editable Inputs</h2>
+      <div class="tabs" id="tabs"></div>
+      <div id="tab-panels"></div>
+    </section>
+    <div id="preview"></div>
   </main>
+  <script>
+    const defaults = {
+  "output": "/Users/pohlikeong/Documents/Retirement/Retirement Bridging Phase/Retirement_Bridging_Phase_Milestones.html",
+  "title": "❤️ Retirement Bridging Phase Milestone",
+  "storageKey": "editableRetirementBridgingPhaseMilestones",
+  "sections": [
+    {
+      "id": "milestones",
+      "title": "Milestone Table",
+      "columns": [
+        "Milestone / Phase",
+        "What Happens",
+        "Action Needed",
+        "Decision / Status",
+        "Planning"
+      ],
+      "amountColumns": [],
+      "rows": [
+        [
+          "Age 55: CPF Restructuring - Bridging Phase",
+          "CPF RA Retirement Account opens",
+          "Top up to ERS max, continue annual RA top-ups of about 3.5% yearly until age 70, and review CPF nomination. Funding can come from SA, OA, or cash.",
+          "Estimated RA ERS limit at age 55 in 2032 is ~$542K. Estimated CPF RA top-up from age 56 to 70 is ~$370K. Estimated SA at Sep 2032 is ~$467K, leaving about ~$75K shortfall.",
+          "At Oct 2032, age 55, top up about ~$75K from OA or cash to meet estimated ERS max of ~$542K. Then set aside about ~$360K from OA or cash to fund RA across 14 years until age 70. Estimated total RA funding need: ~$435K."
+        ],
+        [
+          "Age 62-63: SRS Window Opens - Bridging Phase",
+          "SRS withdrawals can begin penalty-free.",
+          "Confirm SRS penalty-free withdrawal age. If SRS account was opened before July 2022, withdrawal age should be 62. Estimate annual withdrawals and plan a 10-year tax-efficient drawdown.",
+          "To be confirmed.",
+          "At Sep 2033, age 56, estimated RA is ~$575K from salary contributions and interest, without additional voluntary top-ups. Estimated OA is ~$336K and estimated SRS is ~$210K."
+        ],
+        [
+          "Age 65: CPF LIFE Can Begin - Bridging Phase",
+          "CPF LIFE payouts can start.",
+          "Compare CPF LIFE Basic, Standard, and Escalating plans. Basic is estimated around 8% lower than Standard; Escalating is estimated around 19% lower at the beginning. Defer payout to age 70 to benefit from higher payout.",
+          "Preferred approach: Standard Plan, defer payout to age 70. Need bridging income to sustain from earlier retirement years until 70.",
+          "From age 61 to 70, estimated OA + SRS is ~$550K with 2.5% interest over 10 years. Maximizer drawdown may average about ~$5.1K/month. From age 57 to 60, need about ~$250K cash to fund 4 years, generating about ~$5.2K/month."
+        ],
+        [
+          "Age 70: Maximum Payout - Lifetime Security Phase",
+          "Latest point to defer CPF LIFE.",
+          "Finalize CPF LIFE payout start, confirm emergency funds, and align investment drawdowns with CPF LIFE income.",
+          "Male, Standard Plan, estimated RA of ~$1.56M at age 70 may generate about ~$9K/month from Oct 2047 onward. In 2026 value, this is about ~$4.8K/month assuming 3% inflation.",
+          "Total cash needed from age 55 to 70 is about ~$700K. As of Jun 2026, available resources are about ~$365K: cash ~$250K, FD ~$55K, and AIA insurance ~$60K. Additional need is about ~$335K over 7 years, or about ~$50K/year savings. With annual income ~$200K and total expenditure including CPF/SRS reduction and top-ups of about ~$100K, final savings could be ~$100K/year. Possible extra savings: ~$80K/year x 7 years = ~$560K."
+        ]
+      ]
+    },
+    {
+      "id": "summary",
+      "title": "Summary",
+      "columns": [
+        "Topic",
+        "Estimate"
+      ],
+      "amountColumns": [
+        1
+      ],
+      "rows": [
+        [
+          "Estimated ERS target at age 55",
+          "~$542K"
+        ],
+        [
+          "Estimated SA at Sep 2032",
+          "~$467K"
+        ],
+        [
+          "Initial ERS shortfall at age 55",
+          "~$75K"
+        ],
+        [
+          "RA top-up need from age 56 to 70",
+          "~$360K-$370K"
+        ],
+        [
+          "Total RA funding need",
+          "~$435K"
+        ],
+        [
+          "Estimated RA at Sep 2033 without voluntary top-up",
+          "~$575K"
+        ],
+        [
+          "Estimated OA at Sep 2033",
+          "~$336K"
+        ],
+        [
+          "Estimated SRS at Sep 2033",
+          "~$210K"
+        ],
+        [
+          "Estimated RA at age 70",
+          "~$1.56M"
+        ],
+        [
+          "Estimated CPF LIFE Standard payout at age 70",
+          "~$9K/month"
+        ],
+        [
+          "Estimated 2026 value of age-70 payout",
+          "~$4.8K/month"
+        ],
+        [
+          "Total cash needed from age 55 to 70",
+          "~$700K"
+        ],
+        [
+          "Current available resources as of Jun 2026",
+          "~$365K"
+        ],
+        [
+          "Additional cash required over 7 years",
+          "~$335K"
+        ],
+        [
+          "Required average annual savings",
+          "~$50K/year"
+        ]
+      ]
+    }
+  ],
+  "notesTitle": "Key Planning Notes",
+  "notes": [
+    "CPF LIFE Standard Plan is the preferred working assumption.",
+    "CPF LIFE payout is planned to be deferred until age 70.",
+    "Bridging income is needed before CPF LIFE starts.",
+    "OA, SRS, cash, and possible insurance surrender value are key bridging resources.",
+    "Do not double-count CPF SA and RA after age 55, because SA is used to form RA."
+  ]
+};
+    const storageKey = defaults.storageKey;
+    let state = loadState();
+
+    function clone(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
+
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(storageKey);
+        return saved ? mergeState(clone(defaults), JSON.parse(saved)) : clone(defaults);
+      } catch (error) {
+        return clone(defaults);
+      }
+    }
+
+    function mergeState(base, saved) {
+      if (saved.title !== undefined) base.title = saved.title;
+      if (Array.isArray(saved.sections)) base.sections = saved.sections;
+      if (Array.isArray(saved.notes)) base.notes = saved.notes;
+      if (saved.notesTitle !== undefined) base.notesTitle = saved.notesTitle;
+      return base;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function setStatus(message) {
+      document.getElementById("status").textContent = message;
+    }
+
+    function saveState(showMessage = true) {
+      localStorage.setItem(storageKey, JSON.stringify(state));
+      if (showMessage) setStatus("Saved in this browser. Export JSON if you want a backup copy.");
+    }
+
+    function field(label, path, value, type = "input", full = false) {
+      const control = type === "textarea"
+        ? `<textarea data-bind="${escapeHtml(path)}">${escapeHtml(value)}</textarea>`
+        : `<input data-bind="${escapeHtml(path)}" value="${escapeHtml(value)}">`;
+      return `<div class="field ${full ? "full" : ""}"><label>${escapeHtml(label)}</label>${control}</div>`;
+    }
+
+    function buildEditor() {
+      const tabs = [
+        { id: "header", label: "Header" },
+        ...state.sections.map((section, index) => ({ id: `section-${index}`, label: section.title })),
+        ...(state.notes ? [{ id: "notes", label: state.notesTitle || "Notes" }] : [])
+      ];
+      document.getElementById("tabs").innerHTML = tabs.map((tab, index) =>
+        `<button class="tab-button ${index === 0 ? "active" : ""}" data-tab="${tab.id}" type="button">${escapeHtml(tab.label)}</button>`
+      ).join("");
+
+      const headerPanel = `
+        <div class="tab-panel active" id="panel-header">
+          <div class="editor-card">
+            <h3>Page Header</h3>
+            <div class="field-grid">${field("Title", "title", state.title, "input", true)}</div>
+          </div>
+        </div>`;
+
+      const sectionPanels = state.sections.map((section, sectionIndex) => `
+        <div class="tab-panel" id="panel-section-${sectionIndex}">
+          <div class="editor-card">
+            <h3>Section Title</h3>
+            <div class="field-grid">${field("Title", `sections.${sectionIndex}.title`, section.title, "input", true)}</div>
+          </div>
+          <div class="editor-grid">
+            ${section.rows.map((row, rowIndex) => rowEditor(section, sectionIndex, row, rowIndex)).join("")}
+          </div>
+        </div>`).join("");
+
+      const notesPanel = state.notes ? `
+        <div class="tab-panel" id="panel-notes">
+          <div class="editor-card">
+            <h3>Notes Section</h3>
+            <div class="field-grid">${field("Title", "notesTitle", state.notesTitle || "Notes", "input", true)}</div>
+          </div>
+          <div class="editor-grid">
+            ${state.notes.map((note, index) => `
+              <div class="editor-card">
+                <h3>Note ${index + 1}</h3>
+                <div class="field-grid">${field("Text", `notes.${index}`, note, "textarea", true)}</div>
+              </div>`).join("")}
+          </div>
+        </div>` : "";
+
+      document.getElementById("tab-panels").innerHTML = headerPanel + sectionPanels + notesPanel;
+      document.querySelectorAll(".tab-button").forEach((button) => button.addEventListener("click", () => setActiveTab(button.dataset.tab)));
+      document.querySelectorAll("[data-bind]").forEach((input) => {
+        input.addEventListener("input", () => {
+          setByPath(input.dataset.bind, input.value);
+          renderPreview();
+          saveState(false);
+          setStatus("Editing saved automatically in this browser.");
+        });
+      });
+    }
+
+    function rowEditor(section, sectionIndex, row, rowIndex) {
+      return `
+        <div class="editor-card">
+          <h3>${escapeHtml(row[0] || `Row ${rowIndex + 1}`)}</h3>
+          <div class="field-grid">
+            ${section.columns.map((column, columnIndex) => {
+              const isLong = String(row[columnIndex] || "").length > 58 || columnIndex > 1;
+              return field(column, `sections.${sectionIndex}.rows.${rowIndex}.${columnIndex}`, row[columnIndex], isLong ? "textarea" : "input", isLong);
+            }).join("")}
+          </div>
+        </div>`;
+    }
+
+    function setActiveTab(id) {
+      document.querySelectorAll(".tab-button").forEach((button) => button.classList.toggle("active", button.dataset.tab === id));
+      document.querySelectorAll(".tab-panel").forEach((panel) => panel.classList.toggle("active", panel.id === `panel-${id}`));
+    }
+
+    function setByPath(path, value) {
+      const keys = path.split(".");
+      let target = state;
+      keys.slice(0, -1).forEach((key) => {
+        target = target[Number.isInteger(Number(key)) ? Number(key) : key];
+      });
+      const last = keys[keys.length - 1];
+      target[Number.isInteger(Number(last)) ? Number(last) : last] = value;
+    }
+
+    function renderPreview() {
+      document.title = state.title;
+      document.getElementById("page-title").textContent = state.title;
+      document.getElementById("preview").innerHTML = state.sections.map(renderSection).join("") + renderNotes();
+    }
+
+    function renderSection(section) {
+      return `
+        <section>
+          <h2>${escapeHtml(section.title)}</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>${section.columns.map((column, index) => `<th class="${section.amountColumns.includes(index) ? "amount" : ""}">${escapeHtml(column)}</th>`).join("")}</tr></thead>
+              <tbody>
+                ${section.rows.map((row) => `
+                  <tr>${row.map((cell, index) => `<td class="${section.amountColumns.includes(index) ? "amount" : ""}">${escapeHtml(cell)}</td>`).join("")}</tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        </section>`;
+    }
+
+    function renderNotes() {
+      if (!state.notes) return "";
+      return `
+        <section>
+          <h2>${escapeHtml(state.notesTitle || "Notes")}</h2>
+          <ul>${state.notes.map((note) => `<li>${escapeHtml(note)}</li>`).join("")}</ul>
+        </section>`;
+    }
+
+    function exportJson() {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = storageKey + ".json";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      setStatus("Exported JSON backup.");
+    }
+
+    function resetState() {
+      if (!confirm("Reset this page back to the original values?")) return;
+      state = clone(defaults);
+      localStorage.removeItem(storageKey);
+      buildEditor();
+      renderPreview();
+      setStatus("Reset to original values.");
+    }
+
+    document.getElementById("save-button").addEventListener("click", () => saveState(true));
+    document.getElementById("export-button").addEventListener("click", exportJson);
+    document.getElementById("print-button").addEventListener("click", () => window.print());
+    document.getElementById("reset-button").addEventListener("click", resetState);
+    buildEditor();
+    renderPreview();
+    setStatus("Changes save automatically in this browser.");
+  </script>
 </body>
 </html>
