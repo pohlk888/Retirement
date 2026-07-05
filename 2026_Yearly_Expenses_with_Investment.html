@@ -14,6 +14,8 @@
       --blue: #1f5f99;
       --blue-soft: #e8f2fb;
       --green-soft: #eaf7ef;
+      --amber-soft: #fff4db;
+      --red-soft: #fff0f0;
       --shadow: 0 10px 30px rgba(23, 32, 51, 0.08);
     }
     * { box-sizing: border-box; }
@@ -24,10 +26,7 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       line-height: 1.5;
     }
-    main {
-      width: min(1180px, calc(100% - 32px));
-      margin: 32px auto 56px;
-    }
+    main { width: min(1180px, calc(100% - 32px)); margin: 32px auto 56px; }
     header, section {
       margin-bottom: 24px;
       padding: 24px;
@@ -36,73 +35,539 @@
       border-radius: 12px;
       box-shadow: var(--shadow);
     }
-    h1 {
-      margin: 0;
-      font-size: clamp(1.8rem, 3vw, 2.5rem);
-      letter-spacing: 0;
-    }
-    h2 {
-      margin: 0 0 16px;
-      font-size: 1.35rem;
-      color: var(--blue);
-      letter-spacing: 0;
-    }
-    h3 { margin: 18px 0 10px; }
+    h1 { margin: 0; font-size: clamp(1.8rem, 3vw, 2.5rem); letter-spacing: 0; }
+    h2 { margin: 0 0 16px; font-size: 1.35rem; color: var(--blue); letter-spacing: 0; }
+    h3 { margin: 0 0 12px; font-size: 1.05rem; color: #26364f; letter-spacing: 0; }
     p { margin: 0 0 16px; color: var(--muted); }
-    ul { margin: 0 0 0 20px; padding: 0; color: var(--muted); }
-    li { margin: 8px 0; }
-    code {
-      padding: 2px 5px;
-      border-radius: 5px;
-      background: #eef2f7;
-      color: #26364f;
-    }
-    .spacer { height: 14px; }
-    .table-wrap {
-      overflow-x: auto;
+    button, input, textarea { font: inherit; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+    .btn {
+      min-height: 38px;
+      padding: 8px 14px;
       border: 1px solid var(--line);
-      border-radius: 10px;
+      border-radius: 8px;
       background: #fff;
+      color: var(--ink);
+      cursor: pointer;
+      font-weight: 650;
     }
-    table {
-      width: 100%;
-      min-width: 760px;
-      border-collapse: collapse;
-    }
-    th, td {
-      padding: 12px 14px;
+    .btn.primary { border-color: var(--blue); background: var(--blue); color: #fff; }
+    .btn.danger { border-color: #c84b4b; background: var(--red-soft); color: #8d2424; }
+    .status { min-height: 22px; margin: 12px 0 0; color: var(--muted); font-size: 0.9rem; }
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 4px 0 18px;
+      padding-bottom: 10px;
       border-bottom: 1px solid var(--line);
-      vertical-align: top;
-      text-align: left;
     }
-    th {
-      background: var(--blue-soft);
-      color: #183a5c;
+    .tab-button {
+      min-height: 38px;
+      padding: 8px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--muted);
+      cursor: pointer;
       font-weight: 700;
-      white-space: nowrap;
     }
+    .tab-button.active { border-color: var(--blue); background: var(--blue-soft); color: var(--blue); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .editor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .editor-card { border: 1px solid var(--line); border-radius: 10px; background: #fbfdff; padding: 16px; }
+    .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .field.full { grid-column: 1 / -1; }
+    label { color: var(--muted); font-size: 0.84rem; font-weight: 700; }
+    input, textarea {
+      width: 100%;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+    }
+    textarea { min-height: 82px; resize: vertical; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+    table { width: 100%; min-width: 760px; border-collapse: collapse; }
+    th, td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; text-align: left; }
+    th { background: var(--blue-soft); color: #183a5c; font-weight: 700; white-space: nowrap; }
     tr:last-child td { border-bottom: none; }
-    td.amount, th.amount {
-      text-align: right;
-      white-space: nowrap;
-      font-variant-numeric: tabular-nums;
-    }
+    td.amount, th.amount { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
     tbody tr:nth-child(even) td { background: #fbfdff; }
     strong { color: var(--ink); }
+    ul { margin: 0 0 0 20px; padding: 0; color: var(--muted); }
+    li { margin: 8px 0; }
     @media (max-width: 860px) {
       main { width: min(100% - 20px, 1180px); margin-top: 16px; }
       header, section { padding: 18px; border-radius: 10px; }
+      .editor-grid, .field-grid { grid-template-columns: 1fr; }
     }
     @media print {
       body { background: #fff; }
       main { width: 100%; margin: 0; }
       header, section { box-shadow: none; break-inside: avoid; }
+      .editor-section { display: none; }
     }
   </style>
 </head>
 <body>
   <main>
-<header><h1>2026 Yearly Expenses with Investment</h1></header><section><h2>🔵 Living Expenses Without Car</h2><div class="table-wrap"><table><thead><tr><th>Item</th><th class="amount">Calculation</th><th class="amount">Yearly Amount</th></tr></thead><tbody><tr><td>Tax Self</td><td class="amount">$1,350 x 12</td><td class="amount">$16,200.00</td></tr><tr><td>Tax Property</td><td class="amount">$50 x 12</td><td class="amount">$600.00</td></tr><tr><td>AIA Giro Life Insurance</td><td class="amount">$137 x 12</td><td class="amount">$1,644.00</td></tr><tr><td>Medisave Rider Cash Prudential</td><td class="amount">Fixed - Subject annual inflation</td><td class="amount">$505.00</td></tr><tr><td>OneDrive CR-AppleID</td><td class="amount">$9 x 12</td><td class="amount">$108.00</td></tr><tr><td>ChatGPT CR-Apple ID</td><td class="amount">$29.90 x 12</td><td class="amount">$358.80</td></tr><tr><td>Bill M1 CR-Auto</td><td class="amount">$57 x 12</td><td class="amount">$684.00</td></tr><tr><td>Electricity CR-Auto</td><td class="amount">$55 x 12</td><td class="amount">$660.00</td></tr><tr><td>Water/Gas CR-Auto</td><td class="amount">$35 x 12</td><td class="amount">$420.00</td></tr><tr><td>Condo Management Fee</td><td class="amount">$899 x 4</td><td class="amount">$3,596.00</td></tr><tr><td>Grocery</td><td class="amount">$700 x 12</td><td class="amount">$8,400.00</td></tr><tr><td>Mother</td><td class="amount">$600 x 12</td><td class="amount">$7,200.00</td></tr><tr><td>Mother Others</td><td class="amount">Fixed</td><td class="amount">$2,000.00</td></tr><tr><td>NWL Retreats till 2027</td><td class="amount">Fixed</td><td class="amount">$5,000.00</td></tr><tr><td>Personal Travel</td><td class="amount">Fixed</td><td class="amount">$5,000.00</td></tr><tr><td>Personal Spending</td><td class="amount">Fixed</td><td class="amount">$2,000.00</td></tr><tr><td>Outside Meals</td><td class="amount">Fixed</td><td class="amount">$1,500.00</td></tr><tr><td><strong>Sub-total Yearly Without Car</strong></td><td class="amount"></td><td class="amount"><strong>$55,875.80</strong></td></tr></tbody></table></div><div class="spacer"></div></section><section><h2>🔵 Investment / CPF Top-ups</h2><div class="table-wrap"><table><thead><tr><th>Item</th><th class="amount">Yearly Amount</th></tr></thead><tbody><tr><td>Cash Top-up CPF MA</td><td class="amount">$4,600.00</td></tr><tr><td>Cash Top-up SRS</td><td class="amount">$15,300.00</td></tr><tr><td>CPF Employee Reduction</td><td class="amount">$20,000.00</td></tr><tr><td><strong>Sub-total Yearly Investment</strong></td><td class="amount"><strong>$39,900.00</strong></td></tr></tbody></table></div><div class="spacer"></div></section><section><h2>🔵 Car Expenses</h2><div class="table-wrap"><table><thead><tr><th>Item</th><th class="amount">Calculation</th><th class="amount">Yearly Amount</th></tr></thead><tbody><tr><td>Petrol CR</td><td class="amount">$80 x 12</td><td class="amount">$960.00</td></tr><tr><td>Cashcard</td><td class="amount">$40 x 12</td><td class="amount">$480.00</td></tr><tr><td>Road Tax</td><td class="amount">$48 x 12</td><td class="amount">$576.00</td></tr><tr><td>Car Insurance</td><td class="amount">Fixed</td><td class="amount">$1,000.00</td></tr><tr><td>Car Maintenance</td><td class="amount">Fixed</td><td class="amount">$1,000.00</td></tr><tr><td><strong>Sub-total Yearly Car</strong></td><td class="amount">May discontinue from Nov 2028</td><td class="amount"><strong>$4,016.00</strong></td></tr></tbody></table></div><div class="spacer"></div></section><section><h2>🔵 Grand Total</h2><div class="table-wrap"><table><thead><tr><th>Scenario</th><th class="amount">Yearly Amount</th><th class="amount">Monthly Average</th></tr></thead><tbody><tr><td>With car expenditures</td><td class="amount">$99,791.80</td><td class="amount">$8,315.98</td></tr><tr><td>Without car expenditure</td><td class="amount">$95,775.80</td><td class="amount">$7,981.32</td></tr></tbody></table></div><div class="spacer"></div></section><section><h2>🔵 Summary</h2><div class="table-wrap"><table><thead><tr><th>Category</th><th class="amount">Yearly Amount</th></tr></thead><tbody><tr><td>Living expenses without car</td><td class="amount">$55,875.80</td></tr><tr><td>Investment / CPF top-ups</td><td class="amount">$39,900.00</td></tr><tr><td>Car expenses</td><td class="amount">$4,016.00</td></tr><tr><td><strong>Grand total with car</strong></td><td class="amount"><strong>$99,791.80</strong></td></tr><tr><td><strong>Grand total without car</strong></td><td class="amount"><strong>$95,775.80</strong></td></tr></tbody></table></div></section>
+    <header>
+      <h1 id="page-title"></h1>
+      <div class="toolbar">
+        <button class="btn primary" id="save-button" type="button">Save Edits</button>
+        <button class="btn" id="export-button" type="button">Export JSON</button>
+        <button class="btn" id="print-button" type="button">Print / PDF</button>
+        <button class="btn danger" id="reset-button" type="button">Reset</button>
+      </div>
+      <p class="status" id="status"></p>
+    </header>
+    <section class="editor-section">
+      <h2>Editable Inputs</h2>
+      <div class="tabs" id="tabs"></div>
+      <div id="tab-panels"></div>
+    </section>
+    <div id="preview"></div>
   </main>
+  <script>
+    const defaults = {
+  "output": "/Users/pohlikeong/Documents/Retirement/Annual Expenditure/2026_Yearly_Expenses_with_Investment.html",
+  "title": "2026 Yearly Expenses with Investment",
+  "storageKey": "editable2026YearlyExpensesWithInvestment",
+  "sections": [
+    {
+      "id": "living",
+      "title": "🔵 Living Expenses Without Car",
+      "columns": [
+        "Item",
+        "Calculation",
+        "Yearly Amount"
+      ],
+      "amountColumns": [
+        2
+      ],
+      "rows": [
+        [
+          "Tax Self",
+          "$1,350 x 12",
+          "$16,200.00"
+        ],
+        [
+          "Tax Property",
+          "$50 x 12",
+          "$600.00"
+        ],
+        [
+          "AIA Giro Life Insurance",
+          "$137 x 12",
+          "$1,644.00"
+        ],
+        [
+          "Medisave Rider Cash Prudential",
+          "Fixed - Subject annual inflation",
+          "$505.00"
+        ],
+        [
+          "OneDrive CR-AppleID",
+          "$9 x 12",
+          "$108.00"
+        ],
+        [
+          "ChatGPT CR-Apple ID",
+          "$29.90 x 12",
+          "$358.80"
+        ],
+        [
+          "Bill M1 CR-Auto",
+          "$57 x 12",
+          "$684.00"
+        ],
+        [
+          "Electricity CR-Auto",
+          "$55 x 12",
+          "$660.00"
+        ],
+        [
+          "Water/Gas CR-Auto",
+          "$35 x 12",
+          "$420.00"
+        ],
+        [
+          "Condo Management Fee",
+          "$899 x 4",
+          "$3,596.00"
+        ],
+        [
+          "Grocery",
+          "$700 x 12",
+          "$8,400.00"
+        ],
+        [
+          "Mother",
+          "$600 x 12",
+          "$7,200.00"
+        ],
+        [
+          "Mother Others",
+          "Fixed",
+          "$2,000.00"
+        ],
+        [
+          "NWL Retreats till 2027",
+          "Fixed",
+          "$5,000.00"
+        ],
+        [
+          "Personal Travel",
+          "Fixed",
+          "$5,000.00"
+        ],
+        [
+          "Personal Spending",
+          "Fixed",
+          "$2,000.00"
+        ],
+        [
+          "Outside Meals",
+          "Fixed",
+          "$1,500.00"
+        ],
+        [
+          "Sub-total Yearly Without Car",
+          "",
+          "$55,875.80"
+        ]
+      ]
+    },
+    {
+      "id": "investment",
+      "title": "🔵 Investment / CPF Top-ups",
+      "columns": [
+        "Item",
+        "Yearly Amount"
+      ],
+      "amountColumns": [
+        1
+      ],
+      "rows": [
+        [
+          "Cash Top-up CPF MA",
+          "$4,600.00"
+        ],
+        [
+          "Cash Top-up SRS",
+          "$15,300.00"
+        ],
+        [
+          "CPF Employee Reduction",
+          "$20,000.00"
+        ],
+        [
+          "Sub-total Yearly Investment",
+          "$39,900.00"
+        ]
+      ]
+    },
+    {
+      "id": "car",
+      "title": "🔵 Car Expenses",
+      "columns": [
+        "Item",
+        "Calculation",
+        "Yearly Amount"
+      ],
+      "amountColumns": [
+        2
+      ],
+      "rows": [
+        [
+          "Petrol CR",
+          "$80 x 12",
+          "$960.00"
+        ],
+        [
+          "Cashcard",
+          "$40 x 12",
+          "$480.00"
+        ],
+        [
+          "Road Tax",
+          "$48 x 12",
+          "$576.00"
+        ],
+        [
+          "Car Insurance",
+          "Fixed",
+          "$1,000.00"
+        ],
+        [
+          "Car Maintenance",
+          "Fixed",
+          "$1,000.00"
+        ],
+        [
+          "Sub-total Yearly Car",
+          "May discontinue from Nov 2028",
+          "$4,016.00"
+        ]
+      ]
+    },
+    {
+      "id": "grand",
+      "title": "🔵 Grand Total",
+      "columns": [
+        "Scenario",
+        "Yearly Amount",
+        "Monthly Average"
+      ],
+      "amountColumns": [
+        1,
+        2
+      ],
+      "rows": [
+        [
+          "With car expenditures",
+          "$99,791.80",
+          "$8,315.98"
+        ],
+        [
+          "Without car expenditure",
+          "$95,775.80",
+          "$7,981.32"
+        ]
+      ]
+    },
+    {
+      "id": "summary",
+      "title": "🔵 Summary",
+      "columns": [
+        "Category",
+        "Yearly Amount"
+      ],
+      "amountColumns": [
+        1
+      ],
+      "rows": [
+        [
+          "Living expenses without car",
+          "$55,875.80"
+        ],
+        [
+          "Investment / CPF top-ups",
+          "$39,900.00"
+        ],
+        [
+          "Car expenses",
+          "$4,016.00"
+        ],
+        [
+          "Grand total with car",
+          "$99,791.80"
+        ],
+        [
+          "Grand total without car",
+          "$95,775.80"
+        ]
+      ]
+    }
+  ]
+};
+    const storageKey = defaults.storageKey;
+    let state = loadState();
+
+    function clone(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
+
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(storageKey);
+        return saved ? mergeState(clone(defaults), JSON.parse(saved)) : clone(defaults);
+      } catch (error) {
+        return clone(defaults);
+      }
+    }
+
+    function mergeState(base, saved) {
+      if (saved.title !== undefined) base.title = saved.title;
+      if (Array.isArray(saved.sections)) base.sections = saved.sections;
+      if (Array.isArray(saved.notes)) base.notes = saved.notes;
+      if (saved.notesTitle !== undefined) base.notesTitle = saved.notesTitle;
+      return base;
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function setStatus(message) {
+      document.getElementById("status").textContent = message;
+    }
+
+    function saveState(showMessage = true) {
+      localStorage.setItem(storageKey, JSON.stringify(state));
+      if (showMessage) setStatus("Saved in this browser. Export JSON if you want a backup copy.");
+    }
+
+    function field(label, path, value, type = "input", full = false) {
+      const control = type === "textarea"
+        ? `<textarea data-bind="${escapeHtml(path)}">${escapeHtml(value)}</textarea>`
+        : `<input data-bind="${escapeHtml(path)}" value="${escapeHtml(value)}">`;
+      return `<div class="field ${full ? "full" : ""}"><label>${escapeHtml(label)}</label>${control}</div>`;
+    }
+
+    function buildEditor() {
+      const tabs = [
+        { id: "header", label: "Header" },
+        ...state.sections.map((section, index) => ({ id: `section-${index}`, label: section.title })),
+        ...(state.notes ? [{ id: "notes", label: state.notesTitle || "Notes" }] : [])
+      ];
+      document.getElementById("tabs").innerHTML = tabs.map((tab, index) =>
+        `<button class="tab-button ${index === 0 ? "active" : ""}" data-tab="${tab.id}" type="button">${escapeHtml(tab.label)}</button>`
+      ).join("");
+
+      const headerPanel = `
+        <div class="tab-panel active" id="panel-header">
+          <div class="editor-card">
+            <h3>Page Header</h3>
+            <div class="field-grid">${field("Title", "title", state.title, "input", true)}</div>
+          </div>
+        </div>`;
+
+      const sectionPanels = state.sections.map((section, sectionIndex) => `
+        <div class="tab-panel" id="panel-section-${sectionIndex}">
+          <div class="editor-card">
+            <h3>Section Title</h3>
+            <div class="field-grid">${field("Title", `sections.${sectionIndex}.title`, section.title, "input", true)}</div>
+          </div>
+          <div class="editor-grid">
+            ${section.rows.map((row, rowIndex) => rowEditor(section, sectionIndex, row, rowIndex)).join("")}
+          </div>
+        </div>`).join("");
+
+      const notesPanel = state.notes ? `
+        <div class="tab-panel" id="panel-notes">
+          <div class="editor-card">
+            <h3>Notes Section</h3>
+            <div class="field-grid">${field("Title", "notesTitle", state.notesTitle || "Notes", "input", true)}</div>
+          </div>
+          <div class="editor-grid">
+            ${state.notes.map((note, index) => `
+              <div class="editor-card">
+                <h3>Note ${index + 1}</h3>
+                <div class="field-grid">${field("Text", `notes.${index}`, note, "textarea", true)}</div>
+              </div>`).join("")}
+          </div>
+        </div>` : "";
+
+      document.getElementById("tab-panels").innerHTML = headerPanel + sectionPanels + notesPanel;
+      document.querySelectorAll(".tab-button").forEach((button) => button.addEventListener("click", () => setActiveTab(button.dataset.tab)));
+      document.querySelectorAll("[data-bind]").forEach((input) => {
+        input.addEventListener("input", () => {
+          setByPath(input.dataset.bind, input.value);
+          renderPreview();
+          saveState(false);
+          setStatus("Editing saved automatically in this browser.");
+        });
+      });
+    }
+
+    function rowEditor(section, sectionIndex, row, rowIndex) {
+      return `
+        <div class="editor-card">
+          <h3>${escapeHtml(row[0] || `Row ${rowIndex + 1}`)}</h3>
+          <div class="field-grid">
+            ${section.columns.map((column, columnIndex) => {
+              const isLong = String(row[columnIndex] || "").length > 58 || columnIndex > 1;
+              return field(column, `sections.${sectionIndex}.rows.${rowIndex}.${columnIndex}`, row[columnIndex], isLong ? "textarea" : "input", isLong);
+            }).join("")}
+          </div>
+        </div>`;
+    }
+
+    function setActiveTab(id) {
+      document.querySelectorAll(".tab-button").forEach((button) => button.classList.toggle("active", button.dataset.tab === id));
+      document.querySelectorAll(".tab-panel").forEach((panel) => panel.classList.toggle("active", panel.id === `panel-${id}`));
+    }
+
+    function setByPath(path, value) {
+      const keys = path.split(".");
+      let target = state;
+      keys.slice(0, -1).forEach((key) => {
+        target = target[Number.isInteger(Number(key)) ? Number(key) : key];
+      });
+      const last = keys[keys.length - 1];
+      target[Number.isInteger(Number(last)) ? Number(last) : last] = value;
+    }
+
+    function renderPreview() {
+      document.title = state.title;
+      document.getElementById("page-title").textContent = state.title;
+      document.getElementById("preview").innerHTML = state.sections.map(renderSection).join("") + renderNotes();
+    }
+
+    function renderSection(section) {
+      return `
+        <section>
+          <h2>${escapeHtml(section.title)}</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>${section.columns.map((column, index) => `<th class="${section.amountColumns.includes(index) ? "amount" : ""}">${escapeHtml(column)}</th>`).join("")}</tr></thead>
+              <tbody>
+                ${section.rows.map((row) => `
+                  <tr>${row.map((cell, index) => `<td class="${section.amountColumns.includes(index) ? "amount" : ""}">${escapeHtml(cell)}</td>`).join("")}</tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        </section>`;
+    }
+
+    function renderNotes() {
+      if (!state.notes) return "";
+      return `
+        <section>
+          <h2>${escapeHtml(state.notesTitle || "Notes")}</h2>
+          <ul>${state.notes.map((note) => `<li>${escapeHtml(note)}</li>`).join("")}</ul>
+        </section>`;
+    }
+
+    function exportJson() {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = storageKey + ".json";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+      setStatus("Exported JSON backup.");
+    }
+
+    function resetState() {
+      if (!confirm("Reset this page back to the original values?")) return;
+      state = clone(defaults);
+      localStorage.removeItem(storageKey);
+      buildEditor();
+      renderPreview();
+      setStatus("Reset to original values.");
+    }
+
+    document.getElementById("save-button").addEventListener("click", () => saveState(true));
+    document.getElementById("export-button").addEventListener("click", exportJson);
+    document.getElementById("print-button").addEventListener("click", () => window.print());
+    document.getElementById("reset-button").addEventListener("click", resetState);
+    buildEditor();
+    renderPreview();
+    setStatus("Changes save automatically in this browser.");
+  </script>
 </body>
 </html>
