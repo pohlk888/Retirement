@@ -412,6 +412,7 @@
     }
 
     function saveState(showMessage = true) {
+      recalculateState();
       localStorage.setItem(storageKey, JSON.stringify(state));
       if (showMessage) setStatus("Saved in this browser. Export JSON if you want a backup copy.");
     }
@@ -472,6 +473,8 @@
       document.querySelectorAll("[data-bind]").forEach((input) => {
         input.addEventListener("input", () => {
           setByPath(input.dataset.bind, input.value);
+          recalculateState();
+          syncBoundInputs();
           renderPreview();
           saveState(false);
           setStatus("Editing saved automatically in this browser.");
@@ -507,7 +510,120 @@
       target[Number.isInteger(Number(last)) ? Number(last) : last] = value;
     }
 
+    function getByPath(path) {
+      return path.split(".").reduce((target, key) => {
+        if (target === undefined || target === null) return "";
+        return target[Number.isInteger(Number(key)) ? Number(key) : key];
+      }, state);
+    }
+
+    function syncBoundInputs() {
+      document.querySelectorAll("[data-bind]").forEach((input) => {
+        const value = getByPath(input.dataset.bind);
+        if (input.value !== String(value ?? "")) input.value = value ?? "";
+      });
+    }
+
+    function parseMoney(value) {
+      const parsed = Number(String(value ?? "").replace(/[^0-9.-]/g, ""));
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function formatMoney(value) {
+      return "$" + value.toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function evaluateCalculation(value) {
+      const expression = String(value ?? "")
+        .replace(/[$,]/g, "")
+        .replace(/[×xX]/g, "*")
+        .trim();
+      if (!/[0-9]/.test(expression) || /[^0-9+\-*/().\s]/.test(expression)) return null;
+      try {
+        const result = Function(`"use strict"; return (${expression});`)();
+        return Number.isFinite(result) ? result : null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function sectionById(id) {
+      return state.sections.find((section) => section.id === id);
+    }
+
+    function amountColumn(section) {
+      return section.columns.findIndex((column) => /yearly amount|amount/i.test(column));
+    }
+
+    function calculationColumn(section) {
+      return section.columns.findIndex((column) => /calculation/i.test(column));
+    }
+
+    function isSubtotalRow(row) {
+      return /^sub-total/i.test(String(row[0] ?? ""));
+    }
+
+    function sectionTotal(section) {
+      const amountIndex = amountColumn(section);
+      if (amountIndex < 0) return 0;
+      return section.rows
+        .filter((row) => !isSubtotalRow(row))
+        .reduce((total, row) => total + parseMoney(row[amountIndex]), 0);
+    }
+
+    function setSubtotal(section) {
+      const amountIndex = amountColumn(section);
+      if (amountIndex < 0) return;
+      const subtotal = section.rows.find(isSubtotalRow);
+      if (subtotal) subtotal[amountIndex] = formatMoney(sectionTotal(section));
+    }
+
+    function recalculateSectionRows(section) {
+      const calcIndex = calculationColumn(section);
+      const amountIndex = amountColumn(section);
+      if (calcIndex < 0 || amountIndex < 0) return;
+      section.rows.forEach((row) => {
+        if (isSubtotalRow(row)) return;
+        const calculated = evaluateCalculation(row[calcIndex]);
+        if (calculated !== null) row[amountIndex] = formatMoney(calculated);
+      });
+    }
+
+    function recalculateState() {
+      state.sections.forEach((section) => {
+        recalculateSectionRows(section);
+        setSubtotal(section);
+      });
+
+      const livingTotal = sectionTotal(sectionById("living"));
+      const investmentTotal = sectionTotal(sectionById("investment"));
+      const carTotal = sectionTotal(sectionById("car"));
+      const withCar = livingTotal + investmentTotal + carTotal;
+      const withoutCar = livingTotal + investmentTotal;
+
+      const grand = sectionById("grand");
+      if (grand) {
+        grand.rows[0][1] = formatMoney(withCar);
+        grand.rows[0][2] = formatMoney(withCar / 12);
+        grand.rows[1][1] = formatMoney(withoutCar);
+        grand.rows[1][2] = formatMoney(withoutCar / 12);
+      }
+
+      const summary = sectionById("summary");
+      if (summary) {
+        summary.rows[0][1] = formatMoney(livingTotal);
+        summary.rows[1][1] = formatMoney(investmentTotal);
+        summary.rows[2][1] = formatMoney(carTotal);
+        summary.rows[3][1] = formatMoney(withCar);
+        summary.rows[4][1] = formatMoney(withoutCar);
+      }
+    }
+
     function renderPreview() {
+      recalculateState();
       document.title = state.title;
       document.getElementById("page-title").textContent = state.title;
       document.getElementById("preview").innerHTML = state.sections.map(renderSection).join("") + renderNotes();
@@ -565,6 +681,7 @@
     document.getElementById("export-button").addEventListener("click", exportJson);
     document.getElementById("print-button").addEventListener("click", () => window.print());
     document.getElementById("reset-button").addEventListener("click", resetState);
+    recalculateState();
     buildEditor();
     renderPreview();
     setStatus("Changes save automatically in this browser.");
