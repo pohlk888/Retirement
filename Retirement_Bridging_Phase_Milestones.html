@@ -300,6 +300,7 @@
     }
 
     function saveState(showMessage = true) {
+      recalculateState();
       localStorage.setItem(storageKey, JSON.stringify(state));
       if (showMessage) setStatus("Saved in this browser. Export JSON if you want a backup copy.");
     }
@@ -360,6 +361,8 @@
       document.querySelectorAll("[data-bind]").forEach((input) => {
         input.addEventListener("input", () => {
           setByPath(input.dataset.bind, input.value);
+          recalculateState();
+          syncBoundInputs();
           renderPreview();
           saveState(false);
           setStatus("Editing saved automatically in this browser.");
@@ -395,7 +398,74 @@
       target[Number.isInteger(Number(last)) ? Number(last) : last] = value;
     }
 
+    function getByPath(path) {
+      return path.split(".").reduce((target, key) => {
+        if (target === undefined || target === null) return "";
+        return target[Number.isInteger(Number(key)) ? Number(key) : key];
+      }, state);
+    }
+
+    function syncBoundInputs() {
+      document.querySelectorAll("[data-bind]").forEach((input) => {
+        const value = getByPath(input.dataset.bind);
+        if (input.value !== String(value ?? "")) input.value = value ?? "";
+      });
+    }
+
+    function formatMoney(value, compact = false) {
+      if (compact && Math.abs(value) >= 1000000) return "~$" + (value / 1000000).toLocaleString("en-US", { maximumFractionDigits: 2 }) + "M";
+      if (compact && Math.abs(value) >= 1000) return "~$" + (value / 1000).toLocaleString("en-US", { maximumFractionDigits: 2 }) + "K";
+      return "$" + value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function evaluateCalculation(value) {
+      const raw = String(value ?? "").trim();
+      if (/^~/.test(raw) && /-/.test(raw)) return null;
+      if (!/[+\-*/×xX()%]/.test(raw) || !/[0-9]/.test(raw)) return null;
+      const expression = raw
+        .replace(/[$,~]/g, "")
+        .replace(/(\d+(?:\.\d+)?)\s*%/g, "($1/100)")
+        .replace(/(\d+(?:\.\d+)?)\s*[kK]\b/g, "($1*1000)")
+        .replace(/(\d+(?:\.\d+)?)\s*[mM]\b/g, "($1*1000000)")
+        .replace(/[×xX]/g, "*")
+        .trim();
+      if (/[^0-9+\-*/().\s]/.test(expression)) return null;
+      try {
+        const result = Function(`"use strict"; return (${expression});`)();
+        return Number.isFinite(result) ? result : null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function calculationColumn(section) {
+      return section.columns.findIndex((column) => /calculation|formula|driver|asset details/i.test(column));
+    }
+
+    function recalculateState() {
+      state.sections.forEach((section) => {
+        const calcIndex = calculationColumn(section);
+        if (calcIndex >= 0) {
+          const targetIndex = section.amountColumns.find((index) => index > calcIndex);
+          if (targetIndex !== undefined) {
+            section.rows.forEach((row) => {
+              const calculated = evaluateCalculation(row[calcIndex]);
+              if (calculated !== null) row[targetIndex] = formatMoney(calculated, /[kKmM]/.test(String(row[calcIndex])));
+            });
+          }
+        }
+
+        section.amountColumns.forEach((amountIndex) => {
+          section.rows.forEach((row) => {
+            const calculated = evaluateCalculation(row[amountIndex]);
+            if (calculated !== null) row[amountIndex] = formatMoney(calculated, /[kKmM]/.test(String(row[amountIndex])));
+          });
+        });
+      });
+    }
+
     function renderPreview() {
+      recalculateState();
       document.title = state.title;
       document.getElementById("page-title").textContent = state.title;
       document.getElementById("preview").innerHTML = state.sections.map(renderSection).join("") + renderNotes();
@@ -453,6 +523,7 @@
     document.getElementById("export-button").addEventListener("click", exportJson);
     document.getElementById("print-button").addEventListener("click", () => window.print());
     document.getElementById("reset-button").addEventListener("click", resetState);
+    recalculateState();
     buildEditor();
     renderPreview();
     setStatus("Changes save automatically in this browser.");
