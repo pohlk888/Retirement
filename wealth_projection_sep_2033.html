@@ -581,6 +581,7 @@
     }
 
     function saveState(showMessage = true) {
+      recalculateState();
       localStorage.setItem(storageKey, JSON.stringify(state));
       if (showMessage) {
         setStatus("Saved in this browser. Use Export JSON for Codex Sync when you want Codex to apply website edits locally.");
@@ -650,6 +651,8 @@
       document.querySelectorAll("[data-bind]").forEach((input) => {
         input.addEventListener("input", () => {
           setByPath(input.dataset.bind, input.value);
+          recalculateState();
+          syncBoundInputs();
           renderPreview();
           saveState(false);
           setStatus("Editing saved automatically in this browser.");
@@ -728,7 +731,75 @@
       target[keys[keys.length - 1]] = value;
     }
 
+    function getByPath(path) {
+      return path.split(".").reduce((target, key) => {
+        if (target === undefined || target === null) return "";
+        return target[key];
+      }, state);
+    }
+
+    function syncBoundInputs() {
+      document.querySelectorAll("[data-bind]").forEach((input) => {
+        const value = getByPath(input.dataset.bind);
+        if (input.value !== String(value ?? "")) input.value = value ?? "";
+      });
+    }
+
+    function formatMoney(value, compact = false) {
+      if (compact && Math.abs(value) >= 1000000) return "~$" + (value / 1000000).toLocaleString("en-US", { maximumFractionDigits: 2 }) + "M";
+      if (compact && Math.abs(value) >= 1000) return "~$" + (value / 1000).toLocaleString("en-US", { maximumFractionDigits: 2 }) + "K";
+      return "$" + value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function evaluateCalculation(value) {
+      const raw = String(value ?? "").trim();
+      if (/^~/.test(raw) && /-/.test(raw)) return null;
+      if (!/[+\-*/×xX()%]/.test(raw) || !/[0-9]/.test(raw)) return null;
+      const expression = raw
+        .replace(/[$,~]/g, "")
+        .replace(/(\d+(?:\.\d+)?)\s*%/g, "($1/100)")
+        .replace(/(\d+(?:\.\d+)?)\s*[kK]\b/g, "($1*1000)")
+        .replace(/(\d+(?:\.\d+)?)\s*[mM]\b/g, "($1*1000000)")
+        .replace(/[×xX]/g, "*")
+        .trim();
+      if (/[^0-9+\-*/().\s]/.test(expression)) return null;
+      try {
+        const result = Function(`"use strict"; return (${expression});`)();
+        return Number.isFinite(result) ? result : null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function formatCalculatedValue(value, sourceText, currentText = "") {
+      return formatMoney(value, /[kKmM]/.test(String(sourceText)) || /[kKmM]/.test(String(currentText)));
+    }
+
+    function recalculateState() {
+      state.projection.forEach((row) => {
+        const initial = evaluateCalculation(row.initial);
+        if (initial !== null) row.initial = formatCalculatedValue(initial, row.initial, row.initial);
+
+        const projected = evaluateCalculation(row.projected);
+        if (projected !== null) row.projected = formatCalculatedValue(projected, row.projected, row.projected);
+
+        const driver = evaluateCalculation(row.driver);
+        if (driver !== null) row.projected = formatCalculatedValue(driver, row.driver, row.projected);
+      });
+
+      state.cpf.forEach((row) => {
+        const estimate = evaluateCalculation(row.estimate);
+        if (estimate !== null) row.estimate = formatCalculatedValue(estimate, row.estimate, row.estimate);
+      });
+
+      state.totals.forEach((row) => {
+        const value = evaluateCalculation(row.value);
+        if (value !== null) row.value = formatCalculatedValue(value, row.value, row.value);
+      });
+    }
+
     function renderPreview() {
+      recalculateState();
       document.getElementById("page-title").textContent = state.title;
       document.getElementById("page-subtitle").textContent = state.subtitle;
       document.getElementById("total-note").textContent = state.totalNote;
@@ -789,6 +860,7 @@
     document.getElementById("print-button").addEventListener("click", () => window.print());
     document.getElementById("reset-button").addEventListener("click", resetState);
 
+    recalculateState();
     buildEditor();
     renderPreview();
     setStatus("Changes save automatically in this browser.");
