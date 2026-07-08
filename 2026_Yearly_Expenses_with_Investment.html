@@ -96,6 +96,53 @@
     tr:last-child td { border-bottom: none; }
     td.amount, th.amount { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
     tbody tr:nth-child(even) td { background: #fbfdff; }
+    .bar-chart {
+      display: grid;
+      gap: 10px;
+      margin: 0 0 18px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fbfdff;
+    }
+    .bar-chart-title {
+      margin: 0 0 4px;
+      color: #26364f;
+      font-size: 1rem;
+      font-weight: 750;
+    }
+    .bar-row {
+      display: grid;
+      grid-template-columns: minmax(150px, 240px) minmax(160px, 1fr) minmax(92px, auto);
+      align-items: center;
+      gap: 12px;
+    }
+    .bar-label {
+      min-width: 0;
+      color: var(--ink);
+      font-size: 0.92rem;
+      overflow-wrap: anywhere;
+    }
+    .bar-track {
+      position: relative;
+      min-height: 18px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #e8eef7;
+    }
+    .bar-fill {
+      min-width: 2px;
+      height: 18px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #1f5f99, #2f8f75);
+    }
+    .bar-value {
+      text-align: right;
+      color: var(--ink);
+      font-size: 0.92rem;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
     strong { color: var(--ink); }
     ul { margin: 0 0 0 20px; padding: 0; color: var(--muted); }
     li { margin: 8px 0; }
@@ -103,6 +150,8 @@
       main { width: min(100% - 20px, 1180px); margin-top: 16px; }
       header, section { padding: 18px; border-radius: 10px; }
       .editor-grid, .field-grid { grid-template-columns: 1fr; }
+      .bar-row { grid-template-columns: 1fr; gap: 6px; }
+      .bar-value { text-align: left; }
     }
     @media print {
       body { background: #fff; }
@@ -140,7 +189,7 @@
   "sections": [
     {
       "id": "living",
-      "title": "🔵 Living Expenses Without Car",
+      "title": "🔵 Living Expenses",
       "columns": [
         "Item",
         "Calculation",
@@ -207,13 +256,8 @@
         ],
         [
           "Mother",
-          "$600 x 12",
-          "$7,200.00"
-        ],
-        [
-          "Mother Others",
-          "Fixed",
-          "$2,000.00"
+          "$2000 + ($600 x 12)",
+          "$9,200.00"
         ],
         [
           "NWL Retreats till 2027",
@@ -582,6 +626,36 @@
       if (subtotal) subtotal[amountIndex] = formatMoney(sectionTotal(section));
     }
 
+    function sortLivingExpensesByAmount() {
+      const living = sectionById("living");
+      if (!living) return;
+      const amountIndex = amountColumn(living);
+      if (amountIndex < 0) return;
+      const subtotalRows = living.rows.filter(isSubtotalRow);
+      const itemRows = living.rows
+        .filter((row) => !isSubtotalRow(row))
+        .sort((a, b) => parseMoney(b[amountIndex]) - parseMoney(a[amountIndex]));
+      living.rows = [...itemRows, ...subtotalRows];
+    }
+
+    function normalizeMotherRows() {
+      const living = sectionById("living");
+      if (!living) return;
+      const motherIndex = living.rows.findIndex((row) => row[0] === "Mother");
+      const motherOthersIndex = living.rows.findIndex((row) => row[0] === "Mother Others");
+      const combinedIndex = living.rows.findIndex((row) => row[0] === "Mother + Mother Others");
+      const combinedRow = ["Mother", "$2000 + ($600 x 12)", "$9,200.00"];
+
+      if (motherIndex >= 0 && motherOthersIndex >= 0) {
+        living.rows[motherIndex] = combinedRow;
+        living.rows.splice(motherOthersIndex, 1);
+      } else if (combinedIndex >= 0) {
+        living.rows[combinedIndex] = combinedRow;
+      } else if (motherIndex >= 0) {
+        living.rows[motherIndex] = combinedRow;
+      }
+    }
+
     function recalculateSectionRows(section) {
       const calcIndex = calculationColumn(section);
       const amountIndex = amountColumn(section);
@@ -594,10 +668,12 @@
     }
 
     function recalculateState() {
+      normalizeMotherRows();
       state.sections.forEach((section) => {
         recalculateSectionRows(section);
         setSubtotal(section);
       });
+      sortLivingExpensesByAmount();
 
       const livingTotal = sectionTotal(sectionById("living"));
       const investmentTotal = sectionTotal(sectionById("investment"));
@@ -631,9 +707,11 @@
     }
 
     function renderSection(section) {
+      const chart = section.id === "living" ? renderLivingExpenseChart(section) : "";
       return `
         <section>
           <h2>${escapeHtml(section.title)}</h2>
+          ${chart}
           <div class="table-wrap">
             <table>
               <thead><tr>${section.columns.map((column, index) => `<th class="${section.amountColumns.includes(index) ? "amount" : ""}">${escapeHtml(column)}</th>`).join("")}</tr></thead>
@@ -645,6 +723,35 @@
             </table>
           </div>
         </section>`;
+    }
+
+    function renderLivingExpenseChart(section) {
+      const amountIndex = amountColumn(section);
+      if (amountIndex < 0) return "";
+      const rows = section.rows
+        .filter((row) => !isSubtotalRow(row))
+        .map((row) => ({
+          label: row[0],
+          value: parseMoney(row[amountIndex])
+        }))
+        .filter((row) => row.value > 0);
+      const max = Math.max(...rows.map((row) => row.value), 0);
+      if (!max) return "";
+      return `
+        <div class="bar-chart" aria-label="Living expenses yearly amount bar chart">
+          <div class="bar-chart-title">Living Expenses by Item</div>
+          ${rows.map((row) => {
+            const width = Math.max((row.value / max) * 100, 1);
+            return `
+              <div class="bar-row">
+                <div class="bar-label">${escapeHtml(row.label)}</div>
+                <div class="bar-track">
+                  <div class="bar-fill" style="width: ${width.toFixed(2)}%"></div>
+                </div>
+                <div class="bar-value">${formatMoney(row.value)}</div>
+              </div>`;
+          }).join("")}
+        </div>`;
     }
 
     function renderNotes() {
