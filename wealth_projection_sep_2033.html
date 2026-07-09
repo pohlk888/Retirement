@@ -257,13 +257,14 @@
 
     .cards {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: 1fr;
       gap: 14px;
       margin-top: 18px;
     }
 
     .card {
-      padding: 16px;
+      min-height: 132px;
+      padding: 22px 24px;
       border: 1px solid var(--line);
       border-radius: 10px;
       background: var(--green-soft);
@@ -273,13 +274,15 @@
       display: block;
       margin-bottom: 6px;
       color: var(--muted);
-      font-size: 0.88rem;
+      font-size: 1rem;
       font-weight: 650;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
     }
 
     .card span {
       color: var(--ink);
-      font-size: 1.35rem;
+      font-size: 1.65rem;
       font-weight: 800;
     }
 
@@ -308,15 +311,11 @@
         grid-template-columns: 1fr;
       }
 
-      .cards {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
+      .card { padding: 18px; }
     }
 
     @media (max-width: 560px) {
-      .cards {
-        grid-template-columns: 1fr;
-      }
+      .card span { font-size: 1.45rem; }
     }
 
     @media print {
@@ -417,10 +416,10 @@
       reminder: "Do not count CPF SA and CPF RA together after age 55. The SA estimate is useful only as a pre-55 checkpoint before RA is formed.",
       projection: [
         {
-          component: "UOB Cash + FD",
-          initial: "$304.888K",
+          component: "UOB Cash",
+          initial: "$250K",
           projected: "~$864.8K",
-          driver: "$250K + $54.8K + estimated savings of $80K/year x 7 years",
+          driver: "Initial Capital + FD ($54.8K) + estimated savings of $80K/year x 7 years",
           notes: "Annual income ~$200K; expenditure including CPF/SRS reduction and top-ups ~$100K; target savings ~$80K/year"
         },
         {
@@ -448,7 +447,7 @@
           component: "SRS Account",
           initial: "$102.0K",
           projected: "~$209.1K / ~$210K",
-          driver: "$102K + $15.3K/year x 7 years",
+          driver: "Initial Capital + $15.3K/year x 7 years",
           notes: "Before any S&P 500 investment gains"
         },
         {
@@ -521,20 +520,12 @@
       ],
       totals: [
         {
-          label: "RA = $542K, Excluding Condo",
-          value: "~$2.13M"
+          label: "Estimate Wealth (Cash+Insurance+Investment-S&P500+SRS+CPF_RA_OA) - (CPF_MA + $75K to top CPF_RA at 55)",
+          value: "~$1.84M"
         },
         {
-          label: "RA = $542K, Including Condo",
-          value: "~$3.63M"
-        },
-        {
-          label: "RA = $575K, Excluding Condo",
-          value: "~$2.17M"
-        },
-        {
-          label: "RA = $575K, Including Condo",
-          value: "~$3.67M"
+          label: "Estimate Wealth with Asset",
+          value: "~$3.34M"
         }
       ]
     };
@@ -751,6 +742,18 @@
       return "$" + value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
+    function parseCompactMoney(value) {
+      const text = String(value ?? "").replace(/[$,~]/g, "").trim();
+      const match = text.match(/(-?\d+(?:\.\d+)?)\s*([kKmM])?/);
+      if (!match) return null;
+      const multiplier = /m/i.test(match[2] || "") ? 1000000 : /k/i.test(match[2] || "") ? 1000 : 1;
+      return Number(match[1]) * multiplier;
+    }
+
+    function firstCompactMoney(value) {
+      return parseCompactMoney(value);
+    }
+
     function evaluateCalculation(value) {
       const raw = String(value ?? "").trim();
       if (/^~/.test(raw) && /-/.test(raw)) return null;
@@ -775,6 +778,74 @@
       return formatMoney(value, /[kKmM]/.test(String(sourceText)) || /[kKmM]/.test(String(currentText)));
     }
 
+    function projectedFromUobDriver(row) {
+      if (!/^UOB Cash(?: \+ FD)?$/i.test(String(row.component ?? ""))) return null;
+      row.component = "UOB Cash";
+
+      const initial = parseCompactMoney(row.initial);
+      const driver = String(row.driver ?? "");
+      const fdMatch = driver.match(/FD\s*\(([^)]+)\)/i);
+      const savingsMatch = driver.match(/savings(?:\s+of)?\s*([$~]?\d+(?:\.\d+)?\s*[kKmM]?)/i);
+      const yearsMatch = driver.match(/[x×*]\s*(\d+(?:\.\d+)?)\s*years?/i);
+
+      if (initial === null || !fdMatch || !savingsMatch || !yearsMatch) return null;
+
+      const fd = parseCompactMoney(fdMatch[1]);
+      const annualSavings = parseCompactMoney(savingsMatch[1]);
+      const years = Number(yearsMatch[1]);
+      if (fd === null || annualSavings === null || !Number.isFinite(years)) return null;
+
+      return initial + fd + annualSavings * years;
+    }
+
+    function projectedFromAnnualTopUpDriver(row) {
+      if (!/^SRS Account$/i.test(String(row.component ?? ""))) return null;
+
+      const initial = parseCompactMoney(row.initial);
+      const driver = String(row.driver ?? "");
+      const annualMatch = driver.match(/Initial Capital\s*\+\s*([$~]?\d+(?:\.\d+)?\s*[kKmM]?)\s*\/\s*year/i);
+      const yearsMatch = driver.match(/[x×*]\s*(\d+(?:\.\d+)?)\s*years?/i);
+
+      if (initial === null || !annualMatch || !yearsMatch) return null;
+
+      const annualTopUp = parseCompactMoney(annualMatch[1]);
+      const years = Number(yearsMatch[1]);
+      if (annualTopUp === null || !Number.isFinite(years)) return null;
+
+      return initial + annualTopUp * years;
+    }
+
+    function projectionValue(componentName) {
+      const row = state.projection.find((item) => item.component === componentName);
+      return row ? firstCompactMoney(row.projected) : 0;
+    }
+
+    function normalizeTotalCards() {
+      const label = "Estimate Wealth (Cash+Insurance+Investment-S&P500+SRS+CPF_RA_OA) - (CPF_MA + $75K to top CPF_RA at 55)";
+      const estimated =
+        projectionValue("UOB Cash") +
+        projectionValue("AIA Life Insurance") +
+        projectionValue("SRS S&P 500 Investment") +
+        projectionValue("Cash S&P 500 Portfolio Investment") +
+        projectionValue("SRS Account") +
+        projectionValue("CPF RA Account - after age 55") +
+        projectionValue("CPF OA Account") -
+        projectionValue("CPF MA") -
+        75000;
+      const estimatedWithAsset = estimated + projectionValue("Condo Asset");
+
+      state.totals = [
+        {
+          label,
+          value: formatMoney(estimated, true)
+        },
+        {
+          label: "Estimate Wealth with Asset",
+          value: formatMoney(estimatedWithAsset, true)
+        }
+      ];
+    }
+
     function recalculateState() {
       state.projection.forEach((row) => {
         const initial = evaluateCalculation(row.initial);
@@ -785,6 +856,12 @@
 
         const driver = evaluateCalculation(row.driver);
         if (driver !== null) row.projected = formatCalculatedValue(driver, row.driver, row.projected);
+
+        const uobProjected = projectedFromUobDriver(row);
+        if (uobProjected !== null) row.projected = formatMoney(uobProjected, true);
+
+        const annualTopUpProjected = projectedFromAnnualTopUpDriver(row);
+        if (annualTopUpProjected !== null) row.projected = formatMoney(annualTopUpProjected, true);
       });
 
       state.cpf.forEach((row) => {
@@ -796,6 +873,8 @@
         const value = evaluateCalculation(row.value);
         if (value !== null) row.value = formatCalculatedValue(value, row.value, row.value);
       });
+
+      normalizeTotalCards();
     }
 
     function renderPreview() {
