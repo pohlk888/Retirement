@@ -368,7 +368,7 @@
           <thead>
             <tr>
               <th>Wealth Component</th>
-              <th class="amount">Initial Capital - Jul 2026</th>
+              <th class="amount" id="initial-capital-heading">Initial Capital - Today Date</th>
               <th class="amount">Projected Value - Sep 2033</th>
               <th>Growth Driver / Asset Details</th>
               <th>Notes</th>
@@ -743,6 +743,14 @@
       return "$" + value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
+    function todayDateLabel() {
+      return new Date().toLocaleDateString("en-SG", {
+        day: "numeric",
+        month: "short",
+        year: "numeric"
+      });
+    }
+
     function parseCompactMoney(value) {
       const text = String(value ?? "").replace(/[$,~]/g, "").trim();
       const match = text.match(/(-?\d+(?:\.\d+)?)\s*([kKmM])?/);
@@ -882,6 +890,7 @@
       recalculateState();
       document.getElementById("page-title").textContent = state.title;
       document.getElementById("page-subtitle").textContent = state.subtitle;
+      document.getElementById("initial-capital-heading").textContent = `Initial Capital - ${todayDateLabel()}`;
       document.getElementById("total-note").textContent = state.totalNote;
       document.getElementById("key-reminder").textContent = state.reminder;
 
