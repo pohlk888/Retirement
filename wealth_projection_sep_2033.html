@@ -256,6 +256,108 @@
       background: #fbfdff;
     }
 
+    .projection-chart {
+      display: grid;
+      gap: 14px;
+      margin: 0 0 18px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fbfdff;
+    }
+
+    .projection-chart-title {
+      margin: 0;
+      color: #26364f;
+      font-size: 1rem;
+      font-weight: 750;
+    }
+
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 650;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+    }
+
+    .legend-swatch.initial {
+      background: #87aade;
+    }
+
+    .legend-swatch.projected {
+      background: #2f8f75;
+    }
+
+    .chart-row {
+      display: grid;
+      grid-template-columns: minmax(160px, 240px) minmax(220px, 1fr);
+      gap: 12px;
+      align-items: center;
+    }
+
+    .chart-label {
+      min-width: 0;
+      color: var(--ink);
+      font-size: 0.9rem;
+      overflow-wrap: anywhere;
+    }
+
+    .chart-bars {
+      display: grid;
+      gap: 5px;
+    }
+
+    .chart-track {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(86px, auto);
+      gap: 8px;
+      align-items: center;
+    }
+
+    .chart-track-line {
+      position: relative;
+      height: 16px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #e8eef7;
+    }
+
+    .chart-fill {
+      min-width: 2px;
+      height: 16px;
+      border-radius: 999px;
+    }
+
+    .chart-fill.initial {
+      background: #87aade;
+    }
+
+    .chart-fill.projected {
+      background: #2f8f75;
+    }
+
+    .chart-value {
+      color: var(--ink);
+      font-size: 0.84rem;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+      white-space: nowrap;
+    }
+
     .cards {
       display: grid;
       grid-template-columns: 1fr;
@@ -312,6 +414,10 @@
         grid-template-columns: 1fr;
       }
 
+      .chart-row {
+        grid-template-columns: 1fr;
+      }
+
       .card { padding: 18px; }
     }
 
@@ -363,6 +469,7 @@
 
     <section>
       <h2>📊 Projection Table</h2>
+      <div class="projection-chart" id="projection-chart"></div>
       <div class="table-wrap">
         <table>
           <thead>
@@ -521,12 +628,20 @@
       ],
       totals: [
         {
-          label: "Estimate Wealth (Cash+Insurance+Investment-S&P500+SRS+CPF_RA_OA) - (CPF_MA + $75K to top CPF_RA at 55)",
+          label: "Estimate Wealth (Cash + Insurance + \"Investment in S&P500\" + SRS + CPF_RA + CPF_OA) - (CPF_MA + \"$75K topup for CPF_RA at 55\")",
           value: "~$1.84M"
         },
         {
           label: "Estimate Wealth with Asset",
           value: "~$3.34M"
+        },
+        {
+          label: "Estimate Wealth after CPF RA Top-up Reserved Fund",
+          value: "~$1.47M"
+        },
+        {
+          label: "Estimate Wealth with Asset after deducting CPF RA Top-up Reserved Fund",
+          value: "~$2.97M"
         }
       ]
     };
@@ -829,8 +944,19 @@
       return row ? firstCompactMoney(row.projected) : 0;
     }
 
+    function cpfEstimateValue(topicName, preferHigh = false) {
+      const row = state.cpf.find((item) => item.topic === topicName);
+      if (!row) return 0;
+      const values = String(row.estimate ?? "")
+        .match(/[$~]?\d+(?:\.\d+)?\s*[kKmM]?/g)
+        ?.map(firstCompactMoney)
+        .filter((value) => value !== null) ?? [];
+      if (!values.length) return 0;
+      return preferHigh ? Math.max(...values) : values[0];
+    }
+
     function normalizeTotalCards() {
-      const label = "Estimate Wealth (Cash+Insurance+Investment-S&P500+SRS+CPF_RA_OA) - (CPF_MA + $75K to top CPF_RA at 55)";
+      const label = "Estimate Wealth (Cash + Insurance + \"Investment in S&P500\" + SRS + CPF_RA + CPF_OA) - (CPF_MA + \"$75K topup for CPF_RA at 55\")";
       const estimated =
         projectionValue("UOB Cash") +
         projectionValue("AIA Life Insurance") +
@@ -842,6 +968,10 @@
         projectionValue("CPF MA") -
         75000;
       const estimatedWithAsset = estimated + projectionValue("Condo Asset");
+      const cpfRaTopUpReservedFund = cpfEstimateValue("Estimated top-up amount from age 56 to 70", true);
+      const estimatedAfterCpfRaTopUpReservedFund = estimated - cpfRaTopUpReservedFund;
+      const estimatedWithAssetAfterCpfRaTopUpReservedFund =
+        estimatedAfterCpfRaTopUpReservedFund + projectionValue("Condo Asset");
 
       state.totals = [
         {
@@ -851,6 +981,14 @@
         {
           label: "Estimate Wealth with Asset",
           value: formatMoney(estimatedWithAsset, true)
+        },
+        {
+          label: "Estimate Wealth after CPF RA Top-up Reserved Fund",
+          value: formatMoney(estimatedAfterCpfRaTopUpReservedFund, true)
+        },
+        {
+          label: "Estimate Wealth with Asset after deducting CPF RA Top-up Reserved Fund",
+          value: formatMoney(estimatedWithAssetAfterCpfRaTopUpReservedFund, true)
         }
       ];
     }
@@ -886,6 +1024,45 @@
       normalizeTotalCards();
     }
 
+    function renderProjectionChart() {
+      const rows = state.projection.map((row) => {
+        const initial = firstCompactMoney(row.initial) ?? 0;
+        const projected = firstCompactMoney(row.projected) ?? 0;
+        return { component: row.component, initial, projected };
+      });
+      const max = Math.max(...rows.flatMap((row) => [row.initial, row.projected]), 0);
+      if (!max) {
+        document.getElementById("projection-chart").innerHTML = "";
+        return;
+      }
+
+      document.getElementById("projection-chart").innerHTML = `
+        <h3 class="projection-chart-title">Initial Capital vs Projected Value</h3>
+        <div class="chart-legend">
+          <span class="legend-item"><span class="legend-swatch initial"></span>Initial Capital</span>
+          <span class="legend-item"><span class="legend-swatch projected"></span>Projected Value</span>
+        </div>
+        ${rows.map((row) => {
+          const initialWidth = Math.max((row.initial / max) * 100, row.initial > 0 ? 1 : 0);
+          const projectedWidth = Math.max((row.projected / max) * 100, row.projected > 0 ? 1 : 0);
+          return `
+            <div class="chart-row">
+              <div class="chart-label">${escapeHtml(row.component)}</div>
+              <div class="chart-bars">
+                <div class="chart-track">
+                  <div class="chart-track-line"><div class="chart-fill initial" style="width: ${initialWidth.toFixed(2)}%"></div></div>
+                  <div class="chart-value">${escapeHtml(formatMoney(row.initial, true))}</div>
+                </div>
+                <div class="chart-track">
+                  <div class="chart-track-line"><div class="chart-fill projected" style="width: ${projectedWidth.toFixed(2)}%"></div></div>
+                  <div class="chart-value">${escapeHtml(formatMoney(row.projected, true))}</div>
+                </div>
+              </div>
+            </div>`;
+        }).join("")}
+      `;
+    }
+
     function renderPreview() {
       recalculateState();
       document.getElementById("page-title").textContent = state.title;
@@ -893,6 +1070,7 @@
       document.getElementById("initial-capital-heading").textContent = `Initial Capital - ${todayDateLabel()}`;
       document.getElementById("total-note").textContent = state.totalNote;
       document.getElementById("key-reminder").textContent = state.reminder;
+      renderProjectionChart();
 
       document.getElementById("projection-body").innerHTML = state.projection.map((row) => `
         <tr>
